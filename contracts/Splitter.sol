@@ -10,7 +10,10 @@ contract Splitter {
   mapping (address=>Account) private accounts;
   address[] private addressIndices;
 
+  uint public currentBalance;
+
   event ContactInit(address[] addresses);
+  event BalanceSplit(address sender);
 
   modifier paymentSenderIsAuth() {
     require(accounts[msg.sender].isMember, "Account is not authourised member.");
@@ -29,8 +32,24 @@ contract Splitter {
     }
   }
 
-  function withdraw(uint reqAmount, bool all) internal senderIsUser returns(bool isSuccess){
+  function getOtherAccounts() internal view paymentSenderIsAuth returns (address[] otherUsers) {
+    if (addressIndices[0] == msg.sender) {
+      otherUsers.push(addressIndices[1]);
+      otherUsers.push(addressIndices[2]);
+      return(otherUsers);
+    } 
+  }
 
+  function splitBalance() public paymentSenderIsAuth returns (bool success) {
+    (bob,carol) = getOtherAccounts();
+    currentBalance = accounts[msg.sender].balance;
+    accounts[msg.sender].balance = 0;
+
+    accounts[bob].balance += currentBalance/2;
+    accounts[carol].balance += currentBalance/2;
+
+    emit BalanceSplit(msg.sender);
+    return true;
   }
 
 
