@@ -12,7 +12,7 @@ contract Splitter {
   address[] private addrs;
   address[] nonSenderaddresses;
 
-  uint public currentBalance;
+  uint private currentBalance;
 
   event ContactInit(address[] addresses);
   event BalanceSplit(address sender);
@@ -54,7 +54,7 @@ contract Splitter {
     uint numberOfRecivers = recievers.length;
     uint cut = currentBalance/numberOfRecivers;
 
-    for (uint index = 0; index <= numberOfRecivers; index++) {
+    for (uint index = 0; index < numberOfRecivers; index++) {
         accounts[recievers[index]].balance += cut;
     }
 
