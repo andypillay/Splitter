@@ -1,64 +1,45 @@
 pragma solidity ^0.4.22;
 
-
 contract Splitter {
-  struct Account {
-    bool isMember;
-    uint balance;
-    bool isSender;
-  } 
 
-  mapping (address=>Account) private accounts;
-  address[] private addrs;
-  address[] nonSenderaddresses;
+  address alice;
 
-  uint private currentBalance;
+  mapping (address => uint) public balances;
 
-  event ContactInit(address[] addresses);
-  event BalanceSplit(address sender);
-
-  modifier paymentSenderIsAuth() {
-    require(accounts[msg.sender].isMember, "Account is not authourised member.");
-    _;
-  }
-
+  event LogContractInit(address sender);
+  event LogBalanceSplit(address sender, uint balance);
+  event LogFundsRecieved(address reciever1, address reciever2, uint amountRecieved);
+  event LogWithdraw(address sender, uint balance);
   //INIT CONTRACT
-  constructor (address[] addresses) public {
-    require(addresses.length == 3);
-    {
-      for (uint i = 0; i < addresses.length; i++) {
-        accounts[addresses[i]] = Account(true,0,false);
-        addrs.push(addresses[i]);
-    }
-    emit ContactInit(addresses);
-    }
-  }
-
-  function getOtherAccounts() internal paymentSenderIsAuth returns (address[] recievers) {
-    for (uint i = 0; i < addrs.length; i++) {
-      if (addrs[i] == msg.sender) {
-        accounts[msg.sender].isSender = true;
-      } else {
-        accounts[addrs[i]].isSender = false;
-        nonSenderaddresses.push(addrs[i]);
-      }
-    }
-    return nonSenderaddresses;
-  }
-
-  function splitBalance() public paymentSenderIsAuth returns (bool success) {
-    currentBalance = accounts[msg.sender].balance;
-    accounts[msg.sender].balance = 0;
-    address[] memory recievers;
-    recievers = getOtherAccounts();
-    uint numberOfRecivers = recievers.length;
-    uint cut = currentBalance/numberOfRecivers;
-
-    for (uint index = 0; index < numberOfRecivers; index++) {
-        accounts[recievers[index]].balance += cut;
+  constructor () public {
+      alice = msg.sender;
+      emit LogContractInit(msg.sender);
     }
 
-    emit BalanceSplit(msg.sender);
+  function sendSplit(address bob, address carol) public payable returns(bool success) {
+      require(msg.value > 0);
+      require(bob != 0);
+      require(carol != 0);
+      if (msg.sender == alice) {
+        uint value = msg.value/2;
+        emit LogBalanceSplit(msg.sender, msg.value);
+        balances[bob] += value;
+        balances[carol] += value;
+        emit LogFundsRecieved(bob,carol,value);
+        return true;
+      } 
+    }
+
+  function withdraw()public returns(bool success) {
+    require(balances[msg.sender] > 0);
+    uint amount = balances[msg.sender];
+    balances[msg.sender] = 0;
+    msg.sender.transfer(amount);
+    emit LogWithdraw(msg.sender, amount);
     return true;
+  }
+
+  function checkBalance(address user)public constant returns(uint balance) {
+    return balances[user];
   }
 }
