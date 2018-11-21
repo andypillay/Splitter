@@ -10,7 +10,7 @@ contract('Splitter', accounts => {
   var bob = accounts[1];
   var carol = accounts[2];
 
-  beforeEach('setup', async () => {contract = await Splitter.new({from: alice})});
+  beforeEach('setup split', async () => {contract = await Splitter.new({from: alice})});
   
   it('should be owned by alice', function() {
     return contract.owner({from: alice})
@@ -19,34 +19,33 @@ contract('Splitter', accounts => {
       });
   });
 
-  it('should split even amounts', async (isSuccessful) => {
-    return await contract.sendSplit(bob, carol, {from: alice, value: 100 })
-      .then(tx => assert.equal('0', tx.contract.balances[alice]))
-      .then(tx => contract.balances[bob])
-      .then(balance => assert.equal('50', balance.toString(10)))
-      .then(tx => contract.balances[carol])
-      .then(balance => assert.equal('50', balance.toString(10)))
+  it('should split even amounts', function() {
+    return contract.sendSplit(bob, carol, {from: alice, value: 100 })
+      .then(tx => contract.balances(bob))
+      .then(bobBalance => assert.equal('50', bobBalance.toString(10)))
+      .then(() => contract.balances(carol))
+      .then(carolBalance => assert.equal('50', carolBalance.toString(10)))
   });
 
-  it('should split odd amounts', async (isSuccessful) => {
-    return await contract.sendSplit(bob, carol, {from: alice, value: 101 })
-      .then(tx => contract.balances[alice])
-      .then(balance => assert.equal('0', balance.toString(10)))
-      .then(tx => contract.balances[bob])
-      .then(balance => assert.equal('50', balance.toString(10)))
-      .then(tx => contract.balances[carol])
-      .then(balance => assert.equal('50', balance.toString(10)));
+  it('should split odd amounts', function() {
+    return contract.sendSplit(bob, carol, {from: alice, value: 101 })
+      .then(tx => contract.balances(bob))
+      .then(bobBalance => assert.equal('51', bobBalance.toString(10)))
+      .then(() => contract.balances(carol))
+      .then(carolBalance => assert.equal('51', carolBalance.toString(10)))
   });
 
-  it('should be able to withdraw', async (isSuccessful) => {
-    var oldBalance = web3.eth.getBalancePromise(bob);
-    var price = 0;
-    return await contract.sendSplit(bob, carol, {from: alice, value: 100})
-      .then(tx => contract.withdraw({from: bob}))
-      .then(tx => {
-        price = tx.receipt.gasUsed;
-        assert.equal(oldBalance.minus(price).plus(50).toString(), web3.eth.getBalancePromise(bob));
-      });
+  describe('withdraws', function(){
+
+  beforeEach('setup withdraw', async () => { return contract.sendSplit(bob,carol,{ from: alice, value: 100 })} );
+
+
+  it('should be able to withdraw', async function() {
+    let beforeBobBalance = await web3.eth.getBalancePromise(bob)
+    return contract.withdraw({from: bob})
+      .then(txObject => gasCost = web3.eth.getTransactionPromise(txObject.tx).gasPrice.times(txObject.receipt.gasUsed))
+      .then(afterBobBalance => assert.equal(beforeBobBalance.plus(50).minus(gasCost), afterBobBalance))
+    });
   });
 
 });

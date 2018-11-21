@@ -42,13 +42,12 @@ contract Splitter {
       }
     }
 
-  function withdraw()public onlyOwner returns(bool success) {
+  function withdraw() public {
     uint amount = balances[msg.sender];
-    require(balances[msg.sender] > 0);
+    require(amount > 0);
     balances[msg.sender] = 0;
     emit LogWithdraw(msg.sender, amount);
     msg.sender.transfer(amount);
-    return true;
   }
 
 }
