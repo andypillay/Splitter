@@ -3,6 +3,7 @@ pragma solidity 0.4.24;
 contract Splitter {
 
   address public owner;
+  uint value;
 
   mapping (address => uint) public balances;
 
@@ -25,29 +26,26 @@ contract Splitter {
       require(msg.value > 0);
       require(reciever1 != 0);
       require(reciever2 != 0);
-      if(msg.value % 2 == 0){
-        uint value = msg.value/2;
-        balances[reciever1] += value;
-        balances[reciever2] += value;
-        emit LogFundsRecieved(msg.sender,reciever1,reciever2,value);
-        return true;
-      }
+      if(msg.value % 2 == 0)
+        value = msg.value/2;
       else
       {
-        uint valueBonus = (msg.value + 1)/2;
-        balances[reciever1] += valueBonus;
-        balances[reciever2] += valueBonus;
-        emit LogFundsRecieved(msg.sender,reciever1,reciever2,value);
-        return true;
+        uint remainder = msg.value - (2 * (msg.value / 2));
+        value = (msg.value- remainder)/2;
       }
+      balances[reciever1] += value; 
+      balances[reciever2] += value;
+      emit LogFundsRecieved(msg.sender,reciever1,reciever2,value);
+      return true;
     }
 
-  function withdraw() public {
+  function withdraw() public returns(bool success){
     uint amount = balances[msg.sender];
     require(amount > 0);
     balances[msg.sender] = 0;
     emit LogWithdraw(msg.sender, amount);
     msg.sender.transfer(amount);
+    return true;
   }
 
 }
