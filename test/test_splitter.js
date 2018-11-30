@@ -49,7 +49,7 @@ contract('Splitter', accounts => {
         .then(tx => web3.eth.getTransactionPromise(tx.tx))
         .then(tx => tx.gasPrice)
         .then(gasPrice => gasPrice.times(gasUsed))
-        .then(gasCost => assert.strictEqual(web3.fromWei(beforeBobBalance.plus(50).minus(gasUsed), "ether").toString(10), web3.fromWei(web3.eth.getBalance(bob), "ether").toString(10)))
+        .then(gasCost => assert.strictEqual(web3.fromWei(beforeBobBalance, "ether").toString(10), web3.fromWei(web3.eth.getBalance(bob), "ether").toString(10)))
     });
   });
 
